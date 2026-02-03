@@ -1,12 +1,22 @@
 from fastapi import FastAPI
-from app.model import analyze_event
+from pydantic import BaseModel
+from app.model import validate_action
 
-app = FastAPI()
+app = FastAPI(title="Nudos AI – LazosTech")
 
-@app.get("/")
-def read_root():
-    return {"status": "Nudos AI running"}
+class RecyclingInput(BaseModel):
+    machine_id: str
+    material: str
+    weight_grams: float
 
-@app.post("/analyze")
-def analyze(data: dict):
-    return analyze_event(data)
+@app.post("/ingest/recycling")
+def ingest_recycling(data: RecyclingInput):
+    validation = validate_action(data.weight_grams)
+
+    tokens = round(data.weight_grams / 100, 2)
+
+    return {
+        "validated": validation["validated"],
+        "confidence": validation["confidence"],
+        "tokens_issued": tokens
+    }
